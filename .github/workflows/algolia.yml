@@ -1,0 +1,32 @@
+name: Algolia Sync
+
+on:
+  push:
+    paths:
+      - 'lunvox_companies.json'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm install algoliasearch
+
+      - name: Push JSON to Algolia
+        env:
+          ALGOLIA_APP_ID: 'O1ATGK47NF'             # ← Senin Application ID’n
+          ALGOLIA_ADMIN_KEY: '0ae3e9fb563a03c16b8c53cdbbfd5b9a'  # ← Senin Admin API Key’in
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const algoliasearch = require('algoliasearch');
+          const client = algoliasearch(process.env.ALGOLIA_APP_ID, process.env.ALGOLIA_ADMIN_KEY);
+          const index = client.initIndex('lunvox_members');
+          const records = JSON.parse(fs.readFileSync('lunvox_companies.json','utf8'));
+          index.replaceAllObjects(records, { autoGenerateObjectIDIfNotExist: true })
+            .then(() => console.log('✅ Algolia’ya yüklendi.'))
+            .catch(err => { console.error(err); process.exit(1); });
+          EOF
