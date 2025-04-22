@@ -20,13 +20,16 @@ jobs:
           ALGOLIA_APP_ID: 'O1ATGK47NF'             # ← Senin Application ID’n
           ALGOLIA_ADMIN_KEY: '0ae3e9fb563a03c16b8c53cdbbfd5b9a'  # ← Senin Admin API Key’in
         run: |
-         node << 'EOF'
-         const fs = require('fs');
-         const algoliasearch = require('algoliasearch').default;
-         const client = algoliasearch(
-           process.env.ALGOLIA_APP_ID,
-           process.env.ALGOLIA_ADMIN_KEY
-         );
+          node << 'EOF'
+          import { createRequire } from 'module';
+          const require = createRequire(import.meta.url);
+          const fs = require('fs');
+          const algoliasearch = (await import('algoliasearch')).default;
+
+          const client = algoliasearch(
+            process.env.ALGOLIA_APP_ID,
+            process.env.ALGOLIA_ADMIN_KEY
+          );
          const index = client.initIndex('lunvox_members');
          const records = JSON.parse(fs.readFileSync('lunvox_companies.json','utf8'));
          index.replaceAllObjects(records, { autoGenerateObjectIDIfNotExist: true })
