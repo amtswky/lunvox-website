@@ -13,49 +13,31 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install dependencies
-        run: npm install algoliasearch
+        run: npm install algoliasearch@4
 
       - name: Push JSON to Algolia
         env:
-          ALGOLIA_APP_ID: 'O1ATGK47NF'             # ← Senin Application ID’n
-          ALGOLIA_ADMIN_KEY: '0ae3e9fb563a03c16b8c53cdbbfd5b9a'  # ← Senin Admin API Key’in
+          ALGOLIA_APP_ID: 'O1ATGK47NF'
+          ALGOLIA_ADMIN_KEY: '0ae3e9fb563a03c16b8c53cdbbfd5b9a'
         run: |
           node << 'EOF'
-          import { createRequire } from 'module';
-          const require = createRequire(import.meta.url);
-          const fs = require('fs');
-          const algoliasearch = (await import('algoliasearch')).default;
+          (async () => {
+            const fs = require('fs');
+            const { default: algoliasearch } = await import('algoliasearch');
+            
+            const client = algoliasearch(
+              process.env.ALGOLIA_APP_ID,
+              process.env.ALGOLIA_ADMIN_KEY
+            );
+            const index = client.initIndex('lunvox_members');
+            const records = JSON.parse(fs.readFileSync('lunvox_companies.json', 'utf8'));
 
-          const client = algoliasearch(
-            process.env.ALGOLIA_APP_ID,
-            process.env.ALGOLIA_ADMIN_KEY
-          );
-         const index = client.initIndex('lunvox_members');
-         const records = JSON.parse(fs.readFileSync('lunvox_companies.json','utf8'));
-         index.replaceAllObjects(records, { autoGenerateObjectIDIfNotExist: true })
-           .then(() => console.log('✅ Algolia’ya yüklendi.'))
-           .catch(err => { console.error(err); process.exit(1); });
-         EOF
-         node << 'EOF'
-         (async () => {
-           const fs = require('fs');
-           // dynamic import ile ESM modülünü alıyoruz
-           const algoliaMod = await import('algoliasearch');
-           const algoliasearch = algoliaMod.default || algoliaMod;
-
-           const client = algoliasearch(
-             process.env.ALGOLIA_APP_ID,
-             process.env.ALGOLIA_ADMIN_KEY
-           );
-           const index = client.initIndex('lunvox_members');
-           const records = JSON.parse(fs.readFileSync('lunvox_companies.json','utf8'));
-
-           try {
-             await index.replaceAllObjects(records, { autoGenerateObjectIDIfNotExist: true });
-             console.log('✅ Algolia’ya yüklendi.');
-           } catch(err) {
-             console.error(err);
-             process.exit(1);
-           }
-         })();
-         EOF
+            try {
+              await index.replaceAllObjects(records, { autoGenerateObjectIDIfNotExist: true });
+              console.log('✅ Algolia’ya yüklendi.');
+            } catch(err) {
+              console.error(err);
+              process.exit(1);
+            }
+          })();
+          EOF
